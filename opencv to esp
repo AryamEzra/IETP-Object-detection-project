@@ -1,0 +1,45 @@
+import cv2
+import requests
+
+ESP32_CAM_URL = "http://192.168.188.103:81/stream"
+
+def test_connection(url):
+    try:
+        print(f"Testing connection to {url}")
+        response = requests.get(url, stream=True, timeout=10)
+        if response.status_code == 200:
+            print("Successfully connected to ESP32-CAM")
+            return True
+        else:
+            print(f"Failed to connect to ESP32-CAM. Status code: {response.status_code}")
+            return False
+    except requests.exceptions.RequestException as e:
+        print(f"Connection error: {e}")
+        return False
+
+if test_connection(ESP32_CAM_URL):
+    cap = cv2.VideoCapture(ESP32_CAM_URL)
+
+    if not cap.isOpened():
+        print("Error: Unable to open video stream")
+    else:
+        print("Starting video stream...")
+
+        while True:
+            ret, frame = cap.read()
+
+            if not ret:
+                print("Error: Unable to read frame from stream")
+                break
+
+            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            cv2.imshow('ESP32-CAM Grayscale Stream', gray_frame)
+            # Press 'q' to exit the stream
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+else:
+    print("Cannot proceed without a connection to the ESP32-CAM.")
